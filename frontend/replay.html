@@ -1,0 +1,282 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>F1 Replay</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+
+    body {
+      background: #0d0d0d;
+      color: #eee;
+      font-family: 'Segoe UI', sans-serif;
+      display: flex;
+      flex-direction: column;
+      height: 100vh;
+      overflow: hidden;
+    }
+
+    /* ── Top banner ── */
+    #banner {
+      background: #111;
+      border-bottom: 1px solid #222;
+      padding: 6px 20px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 16px;
+      font-size: 13px;
+      color: #aaa;
+      min-height: 36px;
+    }
+
+    #banner span { color: #eee; font-weight: 600; }
+    #banner .dot { color: #444; }
+
+    /* ── Main area: track + leaderboard ── */
+    #main {
+      display: flex;
+      flex: 1;
+      overflow: hidden;
+    }
+
+    /* ── Canvas (track) ── */
+    #canvas-wrap {
+      flex: 1;
+      position: relative;
+      background: #0d0d0d;
+    }
+
+    #track-canvas {
+      width: 100%;
+      height: 100%;
+      display: block;
+    }
+
+    /* ── Top-left HUD (lap + time + status) ── */
+    #hud-left {
+      position: absolute;
+      top: 14px;
+      left: 16px;
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+    }
+
+    #lap-display {
+      font-size: 22px;
+      font-weight: 700;
+      color: #eee;
+    }
+
+    #time-display {
+      font-size: 13px;
+      color: #aaa;
+    }
+
+    #status-banner {
+      font-size: 13px;
+      font-weight: 700;
+      color: #f5c518;
+      letter-spacing: 1px;
+      min-height: 20px;
+      animation: blink 1s step-end infinite;
+    }
+
+    @keyframes blink { 50% { opacity: 0.3; } }
+
+    /* ── Weather panel ── */
+    #weather {
+      position: absolute;
+      top: 14px;
+      left: 16px;
+      margin-top: 90px;
+      font-size: 11px;
+      color: #666;
+      line-height: 1.9;
+    }
+
+    #weather b { color: #999; font-weight: 400; }
+
+    /* ── Controls hint ── */
+    #controls-hint {
+      position: absolute;
+      bottom: 60px;
+      left: 16px;
+      background: #111;
+      border: 1px solid #222;
+      border-radius: 8px;
+      padding: 10px 14px;
+      font-size: 11px;
+      color: #555;
+      line-height: 2;
+    }
+
+    #controls-hint span { color: #888; }
+
+    /* ── Progress bar ── */
+    #progress-wrap {
+      position: absolute;
+      bottom: 0;
+      left: 0;
+      right: 0;
+      height: 6px;
+      background: #1a1a1a;
+      cursor: pointer;
+    }
+
+    #progress-bar {
+      height: 100%;
+      background: #e8402a;
+      width: 0%;
+      transition: width 0.1s linear;
+      pointer-events: none;
+    }
+
+    /* ── Leaderboard panel ── */
+    #leaderboard {
+      width: 200px;
+      min-width: 200px;
+      background: #111;
+      border-left: 1px solid #222;
+      padding: 12px 0;
+      overflow-y: auto;
+    }
+
+    #leaderboard h3 {
+      font-size: 12px;
+      color: #666;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      padding: 0 14px 10px;
+      border-bottom: 1px solid #1e1e1e;
+      margin-bottom: 6px;
+    }
+
+    .lb-row {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      padding: 5px 14px;
+      font-size: 12px;
+      border-bottom: 1px solid #161616;
+    }
+
+    .lb-pos {
+      color: #444;
+      font-size: 11px;
+      width: 20px;
+    }
+
+    .lb-dot {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      flex-shrink: 0;
+    }
+
+    .lb-name {
+      font-weight: 600;
+      font-size: 12px;
+      flex: 1;
+    }
+
+    .lb-tyre {
+      font-size: 10px;
+      padding: 1px 5px;
+      border-radius: 3px;
+      font-weight: 600;
+    }
+
+    /* Speed controls row */
+    #speed-row {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      padding: 8px 14px;
+      border-top: 1px solid #1e1e1e;
+      margin-top: 6px;
+    }
+
+    .spd-btn {
+      flex: 1;
+      padding: 4px 0;
+      background: #1a1a1a;
+      border: 1px solid #2a2a2a;
+      color: #888;
+      border-radius: 4px;
+      font-size: 10px;
+      cursor: pointer;
+    }
+
+    .spd-btn.active {
+      background: #e8402a;
+      border-color: #e8402a;
+      color: #fff;
+    }
+
+  </style>
+</head>
+<body>
+
+  <!-- Top banner: event name, round, date -->
+  <div id="banner">
+    <span id="banner-event">Loading...</span>
+    <span class="dot">·</span>
+    <span id="banner-round"></span>
+    <span class="dot">·</span>
+    <span id="banner-laps"></span>
+  </div>
+
+  <div id="main">
+
+    <!-- Track canvas -->
+    <div id="canvas-wrap">
+      <canvas id="track-canvas"></canvas>
+
+      <!-- HUD overlays -->
+      <div id="hud-left">
+        <div id="lap-display">Lap: --/--</div>
+        <div id="time-display">Race Time: --:--:--</div>
+        <div id="status-banner"></div>
+      </div>
+
+      <div id="weather"></div>
+
+      <div id="controls-hint">
+        <span>SPACE</span> Pause / Resume<br>
+        <span>← →</span> Jump back / forward<br>
+        <span>↑ ↓</span> Speed + / -<br>
+        <span>R</span> Restart
+      </div>
+
+      <!-- Progress bar (click to seek) -->
+      <div id="progress-wrap" onclick="seekTo(event)">
+        <div id="progress-bar"></div>
+      </div>
+    </div>
+
+    <!-- Leaderboard -->
+    <div id="leaderboard">
+      <h3>Leaderboard</h3>
+      <div id="lb-rows"></div>
+      <div id="speed-row">
+        <button class="spd-btn active" onclick="setSpeed(1)">1x</button>
+        <button class="spd-btn" onclick="setSpeed(2)">2x</button>
+        <button class="spd-btn" onclick="setSpeed(4)">4x</button>
+        <button class="spd-btn" onclick="setSpeed(8)">8x</button>
+        <button class="spd-btn" onclick="setSpeed(16)">16x</button>
+        <button class="spd-btn" onclick="setSpeed(32)">32x</button>
+        <button class="spd-btn" onclick="setSpeed(64)">64x</button>
+        <button class="spd-btn" onclick="setSpeed(128)">128x</button>
+        <button class="spd-btn" onclick="setSpeed(256)">256x</button>
+      </div>
+    </div>
+
+  </div>
+
+  <script src="/static/replay.js"></script>
+</body>
+</html>
+
+

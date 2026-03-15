@@ -1,0 +1,234 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>F1 Race Replay</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+
+    body {
+      background: #0d0d0d;
+      color: #eee;
+      font-family: 'Segoe UI', sans-serif;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      min-height: 100vh;
+    }
+
+    h1 {
+      font-size: 28px;
+      color: #e8402a;
+      letter-spacing: 2px;
+      margin-bottom: 6px;
+    }
+
+    p.sub {
+      font-size: 13px;
+      color: #555;
+      margin-bottom: 40px;
+      letter-spacing: 1px;
+    }
+
+    .card {
+      background: #161616;
+      border: 1px solid #222;
+      border-radius: 12px;
+      padding: 32px 40px;
+      width: 420px;
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+    }
+
+    label {
+      font-size: 11px;
+      color: #666;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      margin-bottom: 4px;
+      display: block;
+    }
+
+    select, button {
+      width: 100%;
+      padding: 10px 14px;
+      border-radius: 6px;
+      border: 1px solid #2a2a2a;
+      background: #1e1e1e;
+      color: #eee;
+      font-size: 13px;
+      cursor: pointer;
+      outline: none;
+    }
+
+    select:focus { border-color: #e8402a; }
+
+    button {
+      background: #e8402a;
+      border-color: #e8402a;
+      color: #fff;
+      font-weight: 600;
+      font-size: 14px;
+      letter-spacing: 1px;
+      margin-top: 8px;
+      transition: background 0.2s;
+    }
+
+    button:hover:not(:disabled) { background: #c73320; }
+    button:disabled { background: #333; border-color: #333; color: #555; cursor: not-allowed; }
+
+    #status {
+      font-size: 12px;
+      color: #e8402a;
+      text-align: center;
+      min-height: 18px;
+      letter-spacing: 0.5px;
+    }
+
+    .spinner {
+      display: inline-block;
+      width: 10px;
+      height: 10px;
+      border: 2px solid #e8402a;
+      border-top-color: transparent;
+      border-radius: 50%;
+      animation: spin 0.7s linear infinite;
+      margin-right: 6px;
+      vertical-align: middle;
+    }
+
+    @keyframes spin { to { transform: rotate(360deg); } }
+  </style>
+</head>
+<body>
+
+  <h1>🏎 F1 RACE REPLAY</h1>
+  <p class="sub">Real telemetry. Real data. Real races.</p>
+
+  <div class="card">
+
+    <!-- Year -->
+    <div>
+      <label>Season</label>
+      <select id="year" onchange="loadRounds()">
+        <option value="">Select year...</option>
+        <option value="2024">2024</option>
+        <option value="2023">2023</option>
+        <option value="2022">2022</option>
+        <option value="2021">2021</option>
+        <option value="2020">2020</option>
+      </select>
+    </div>
+
+    <!-- Round -->
+    <div>
+      <label>Race Weekend</label>
+      <select id="round" disabled>
+        <option value="">Select year first...</option>
+      </select>
+    </div>
+
+    <!-- Session type -->
+    <div>
+      <label>Session</label>
+      <select id="session">
+        <option value="R">Race</option>
+        <option value="Q">Qualifying</option>
+        <option value="S">Sprint</option>
+      </select>
+    </div>
+
+    <div id="status"></div>
+
+    <button id="launch-btn" onclick="launch()" disabled>
+      LOAD &amp; WATCH
+    </button>
+
+  </div>
+
+  <script>
+    // ── Load rounds when year is selected ──────────────────────────────────
+
+    async function loadRounds() {
+      const year = document.getElementById('year').value
+      const roundSelect = document.getElementById('round')
+      const btn = document.getElementById('launch-btn')
+
+      if (!year) return
+
+      setStatus('Loading schedule...')
+      roundSelect.disabled = true
+      btn.disabled = true
+
+      try {
+        const res  = await fetch(`/api/races/${year}`)
+        const data = await res.json()
+
+        roundSelect.innerHTML = ''
+        data.forEach(race => {
+          const opt   = document.createElement('option')
+          opt.value   = race.round
+          opt.text    = `R${race.round} — ${race.name} (${race.date})`
+          roundSelect.appendChild(opt)
+        })
+
+        roundSelect.disabled = false
+        btn.disabled = false
+        setStatus('')
+
+      } catch (e) {
+        setStatus('Failed to load schedule. Is the server running?')
+      }
+    }
+
+    // ── Launch button ──────────────────────────────────────────────────────
+
+    async function launch() {
+      const year    = document.getElementById('year').value
+      const round   = document.getElementById('round').value
+      const session = document.getElementById('session').value
+      const btn     = document.getElementById('launch-btn')
+
+      if (!year || !round) {
+        setStatus('Please select a year and race.')
+        return
+      }
+
+      btn.disabled = true
+      setStatus('<span class="spinner"></span> Loading session data — this may take a few minutes on first load...')
+
+      try {
+        // Tell the server to load and process this session
+        const res  = await fetch(`/api/load/${year}/${round}/${session}`)
+        const data = await res.json()
+
+        if (data.error) {
+          setStatus(`Error: ${data.error}`)
+          btn.disabled = false
+          return
+        }
+
+        // Save metadata to sessionStorage so replay.html can read it
+        sessionStorage.setItem('replayMeta', JSON.stringify(data))
+        sessionStorage.setItem('replayKey', `${year}/${round}/${session}`)
+
+        // Navigate to the replay page
+        window.location.href = '/replay'
+
+      } catch (e) {
+        setStatus('Failed to load session. Check the terminal for errors.')
+        btn.disabled = false
+      }
+    }
+
+    // ── Status helper ──────────────────────────────────────────────────────
+
+    function setStatus(msg) {
+      document.getElementById('status').innerHTML = msg
+    }
+  </script>
+
+</body>
+</html>

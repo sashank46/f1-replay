@@ -1,0 +1,19 @@
+# Python virtual environment
+venv/
+pyvenv.cfg
+
+# Python bytecode
+__pycache__/
+*.pyc
+
+# F1 Data Caches
+.fastf1/
+.fastf1-cache/
+cache/
+
+# Data files
+*.csv
+*.json
+*.ff1pkl
+*.sqlite
+*.pkl

@@ -1,0 +1,10 @@
+fastf1
+fastapi
+uvicorn[standard]
+numpy
+pandas
+
+
+
+
+# uvicorn api:app --reload
