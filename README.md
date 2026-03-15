@@ -198,4 +198,3 @@ This project is licensed under the MIT License.
 ## 🙏 Acknowledgements
 
 - [FastF1](https://github.com/theOehrly/Fast-F1) — The incredible Python library that makes real F1 telemetry data accessible
-- Original desktop version inspiration: [f1-race-replay](https://github.com/IAmTomShaw/f1-race-replay) by Tom Shaw
