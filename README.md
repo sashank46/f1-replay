@@ -28,8 +28,6 @@ The replay shows the real Yas Marina Circuit shape drawn from FastF1 GPS telemet
 - **Safety Car / VSC** — Animated banner when safety car or VSC is deployed
 - **Weather Panel** — Live track temp, air temp, humidity, wind speed, rain status
 - **Playback Controls** — Pause, rewind, fast forward, speed up to 256x
-- **Progress Bar** — Click anywhere to seek to any point in the race
-- **Pickle Cache** — First load processes data, subsequent loads are instant
 
 ---
 
