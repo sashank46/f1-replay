@@ -12,7 +12,7 @@ A web-based Formula 1 race replay tool built with **FastAPI** and **HTML Canvas*
 
 ![F1 Race Replay](assets/preview.png)
 
-> Abu Dhabi Grand Prix 2021 — Lap 24/58 
+> Abu Dhabi Grand Prix 2021 — Lap 24/58
 
 The replay shows the real Yas Marina Circuit shape drawn from FastF1 GPS telemetry, with all 20 drivers moving in real time at their actual race positions.
 
